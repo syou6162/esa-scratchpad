@@ -88,8 +88,6 @@ impl fmt::Display for TimestampId {
 pub struct ScratchpadEntry {
     /// バリデーション済みタイムスタンプID
     pub timestamp_id: TimestampId,
-    /// アンカーHTMLタグ全体（例: '<a id="153000123456" href="#153000123456">15:30</a>'）
-    pub timestamp_html: String,
     /// エントリ本文（アンカータグ以降のテキスト）
     pub text: String,
 }
@@ -98,6 +96,12 @@ pub struct ScratchpadEntry {
 pub enum EntryError {
     #[error("entry not found: timestamp_id={0}")]
     NotFound(TimestampId),
+
+    #[error("invalid timestamp in block {block_index}: {source}")]
+    InvalidTimestamp {
+        block_index: usize,
+        source: ValidationError,
+    },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -110,32 +114,38 @@ pub enum ValidationError {
 }
 
 /// body_mdを行頭の `---` でsplitし、各ブロックからエントリを抽出
-pub fn parse_scratchpad_entries(body_md: &str) -> Vec<ScratchpadEntry> {
+///
+/// アンカーHTMLにマッチしたがTimestampIdのバリデーションに失敗した場合はErrを返す。
+/// 空ブロックやアンカーのないブロックはスキップする。
+pub fn parse_scratchpad_entries(body_md: &str) -> Result<Vec<ScratchpadEntry>, EntryError> {
     let normalized = body_md.replace("\r\n", "\n").replace('\r', "\n");
 
-    let anchor_re = Regex::new(r##"(?s)^(<a id="(\d+)" href="#\d+">[^<]+</a>) (.*)"##).unwrap();
+    let anchor_re = Regex::new(r##"(?s)^<a id="(\d+)" href="#\d+">[^<]+</a> (.*)"##).unwrap();
 
-    normalized
-        .split(ENTRY_SEPARATOR)
-        .enumerate()
-        .filter_map(|(i, block)| {
-            let trimmed = if i == 0 {
-                block.trim_end_matches('\n')
-            } else {
-                block.trim_matches('\n')
-            };
-            if trimmed.is_empty() {
-                return None;
-            }
-            let caps = anchor_re.captures(trimmed)?;
-            let timestamp_id = TimestampId::new(&caps[2]).ok()?;
-            Some(ScratchpadEntry {
-                timestamp_id,
-                timestamp_html: caps[1].to_string(),
-                text: caps[3].to_string(),
-            })
-        })
-        .collect()
+    let mut entries = Vec::new();
+    for (i, block) in normalized.split(ENTRY_SEPARATOR).enumerate() {
+        let trimmed = if i == 0 {
+            block.trim_end_matches('\n')
+        } else {
+            block.trim_matches('\n')
+        };
+        if trimmed.is_empty() {
+            continue;
+        }
+        let Some(caps) = anchor_re.captures(trimmed) else {
+            continue;
+        };
+        let timestamp_id =
+            TimestampId::new(&caps[1]).map_err(|e| EntryError::InvalidTimestamp {
+                block_index: i,
+                source: e,
+            })?;
+        entries.push(ScratchpadEntry {
+            timestamp_id,
+            text: caps[2].to_string(),
+        });
+    }
+    Ok(entries)
 }
 
 /// エントリリストをbody_md形式に再構成
@@ -146,7 +156,7 @@ pub fn entries_to_body(entries: &[ScratchpadEntry]) -> String {
 
     entries
         .iter()
-        .map(|e| format!("{} {}\n\n---", e.timestamp_html, e.text))
+        .map(|e| format!("{} {}\n\n---", e.timestamp_id.to_anchor_html(), e.text))
         .collect::<Vec<_>>()
         .join("\n\n")
 }
@@ -155,7 +165,6 @@ pub fn entries_to_body(entries: &[ScratchpadEntry]) -> String {
 pub fn create_scratchpad_entry(timestamp_id: &TimestampId, text: &str) -> ScratchpadEntry {
     ScratchpadEntry {
         timestamp_id: timestamp_id.clone(),
-        timestamp_html: timestamp_id.to_anchor_html(),
         text: text.to_string(),
     }
 }
@@ -176,7 +185,6 @@ pub fn replace_entry_text(
             if e.timestamp_id == *timestamp_id {
                 ScratchpadEntry {
                     timestamp_id: e.timestamp_id.clone(),
-                    timestamp_html: e.timestamp_html.clone(),
                     text: new_text.to_string(),
                 }
             } else {

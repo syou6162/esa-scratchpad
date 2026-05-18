@@ -87,7 +87,7 @@ fn round_trip_single_entry() {
 
         ---"##
     };
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries_to_body(&entries), body);
 }
@@ -103,7 +103,7 @@ fn round_trip_multiple_entries() {
 
         ---"##
     };
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 2);
     assert_eq!(entries_to_body(&entries), body);
 }
@@ -112,7 +112,7 @@ fn round_trip_multiple_entries() {
 
 #[test]
 fn parse_empty_body() {
-    let entries = parse_scratchpad_entries("");
+    let entries = parse_scratchpad_entries("").unwrap();
     assert!(entries.is_empty());
 }
 
@@ -123,13 +123,9 @@ fn parse_single_entry() {
 
         ---"##
     };
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].timestamp_id, tid("153000123456"));
-    assert_eq!(
-        entries[0].timestamp_html,
-        r##"<a id="153000123456" href="#153000123456">15:30</a>"##
-    );
     assert_eq!(entries[0].text, "テスト");
 }
 
@@ -144,7 +140,7 @@ fn parse_multiple_entries() {
 
         ---"##
     };
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 2);
     assert_eq!(entries[0].timestamp_id, tid("170000123456"));
     assert_eq!(entries[0].text, "夕方のメモ");
@@ -157,7 +153,7 @@ fn parse_multiple_entries() {
 #[test]
 fn parse_crlf_normalization() {
     let body = "<a id=\"100000000000\" href=\"#100000000000\">10:00</a> memo\r\n\r\n---\r\n";
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].text, "memo");
 }
@@ -165,7 +161,7 @@ fn parse_crlf_normalization() {
 #[test]
 fn parse_cr_normalization() {
     let body = "<a id=\"100000000000\" href=\"#100000000000\">10:00</a> memo\r\r---\r";
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].text, "memo");
 }
@@ -180,14 +176,10 @@ fn entries_to_body_empty() {
 // --- create_scratchpad_entry ---
 
 #[test]
-fn create_entry_generates_correct_html() {
+fn create_entry_generates_correct_fields() {
     let id = tid("153000123456");
     let entry = create_scratchpad_entry(&id, "テストメモ");
     assert_eq!(entry.timestamp_id, id);
-    assert_eq!(
-        entry.timestamp_html,
-        r##"<a id="153000123456" href="#153000123456">15:30</a>"##
-    );
     assert_eq!(entry.text, "テストメモ");
 }
 
@@ -195,10 +187,8 @@ fn create_entry_generates_correct_html() {
 fn create_entry_midnight() {
     let id = tid("000000000000");
     let entry = create_scratchpad_entry(&id, "深夜メモ");
-    assert_eq!(
-        entry.timestamp_html,
-        r##"<a id="000000000000" href="#000000000000">00:00</a>"##
-    );
+    assert_eq!(entry.timestamp_id, id);
+    assert_eq!(entry.text, "深夜メモ");
 }
 
 // --- replace_entry_text ---
@@ -367,6 +357,52 @@ fn tags_including_weekday_empty_tags() {
     assert_eq!(result, vec!["月曜日"]);
 }
 
+// --- parse: strict error on invalid timestamp ---
+
+#[test]
+fn parse_errors_on_invalid_timestamp_in_anchor() {
+    let body = indoc! {r##"
+        <a id="990000000000" href="#990000000000">99:00</a> 壊れたエントリ
+
+        ---"##
+    };
+    let err = parse_scratchpad_entries(body).unwrap_err();
+    assert!(matches!(err, EntryError::InvalidTimestamp { .. }));
+}
+
+#[test]
+fn parse_skips_non_anchor_blocks() {
+    let body = indoc! {r##"
+        <a id="170000123456" href="#170000123456">17:00</a> 正常エントリ
+
+        ---
+
+        これはアンカーのないブロック
+
+        ---"##
+    };
+    let entries = parse_scratchpad_entries(body).unwrap();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].timestamp_id, tid("170000123456"));
+}
+
+#[test]
+fn parse_consecutive_separators() {
+    let body = indoc! {r##"
+        <a id="170000123456" href="#170000123456">17:00</a> first
+
+        ---
+
+        ---
+
+        <a id="130000000000" href="#130000000000">13:00</a> second
+
+        ---"##
+    };
+    let entries = parse_scratchpad_entries(body).unwrap();
+    assert_eq!(entries.len(), 2);
+}
+
 // --- parse multiline entry text ---
 
 #[test]
@@ -378,7 +414,7 @@ fn parse_entry_with_multiline_text() {
 
         ---"##
     };
-    let entries = parse_scratchpad_entries(body);
+    let entries = parse_scratchpad_entries(body).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].text, "1行目\n2行目\n3行目");
 }
