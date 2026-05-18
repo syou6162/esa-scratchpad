@@ -4,12 +4,90 @@ mod entry_tests;
 
 use chrono::{DateTime, Datelike, FixedOffset, NaiveDate};
 use regex::Regex;
+use std::fmt;
+
+const ENTRY_SEPARATOR: &str = "\n---";
+
+/// バリデーション済みタイムスタンプID（HHMMSSffffff形式、12桁）
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct TimestampId(String);
+
+impl TimestampId {
+    /// 文字列からバリデーション済みTimestampIdを生成
+    pub fn new(value: &str) -> Result<Self, ValidationError> {
+        Self::validate(value)?;
+        Ok(Self(value.to_string()))
+    }
+
+    /// DateTime<FixedOffset>からTimestampIdを生成
+    pub fn from_datetime(dt: &DateTime<FixedOffset>) -> Self {
+        Self(dt.format("%H%M%S%6f").to_string())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// 表示用の "HH:MM" 文字列を返す
+    pub fn display_time(&self) -> String {
+        format!("{}:{}", &self.0[0..2], &self.0[2..4])
+    }
+
+    /// アンカーHTMLタグを生成
+    pub fn to_anchor_html(&self) -> String {
+        format!(
+            r##"<a id="{id}" href="#{id}">{display}</a>"##,
+            id = self.0,
+            display = self.display_time()
+        )
+    }
+
+    fn validate(value: &str) -> Result<(), ValidationError> {
+        if value.len() != 12 || !value.chars().all(|c| c.is_ascii_digit()) {
+            return Err(ValidationError::InvalidFormat(format!(
+                "must be 12 digits, got \"{}\"",
+                value
+            )));
+        }
+
+        let hours: u32 = value[0..2].parse().unwrap();
+        let minutes: u32 = value[2..4].parse().unwrap();
+        let seconds: u32 = value[4..6].parse().unwrap();
+
+        if hours > 23 {
+            return Err(ValidationError::InvalidFormat(format!(
+                "hours out of range (0-23): {}",
+                hours
+            )));
+        }
+        if minutes > 59 {
+            return Err(ValidationError::InvalidFormat(format!(
+                "minutes out of range (0-59): {}",
+                minutes
+            )));
+        }
+        if seconds > 59 {
+            return Err(ValidationError::InvalidFormat(format!(
+                "seconds out of range (0-59): {}",
+                seconds
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+impl fmt::Display for TimestampId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 /// ラクガキ帳の1エントリ
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScratchpadEntry {
-    /// アンカーのid属性値（例: "153000123456"）
-    pub timestamp_id: String,
+    /// バリデーション済みタイムスタンプID
+    pub timestamp_id: TimestampId,
     /// アンカーHTMLタグ全体（例: '<a id="153000123456" href="#153000123456">15:30</a>'）
     pub timestamp_html: String,
     /// エントリ本文（アンカータグ以降のテキスト）
@@ -19,7 +97,7 @@ pub struct ScratchpadEntry {
 #[derive(Debug, thiserror::Error)]
 pub enum EntryError {
     #[error("entry not found: timestamp_id={0}")]
-    NotFound(String),
+    NotFound(TimestampId),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -28,7 +106,7 @@ pub enum ValidationError {
     InvalidFormat(String),
 
     #[error("duplicate timestamp ID: {0}")]
-    DuplicateTimestamp(String),
+    DuplicateTimestamp(TimestampId),
 }
 
 /// body_mdを行頭の `---` でsplitし、各ブロックからエントリを抽出
@@ -38,10 +116,9 @@ pub fn parse_scratchpad_entries(body_md: &str) -> Vec<ScratchpadEntry> {
     let anchor_re = Regex::new(r##"(?s)^(<a id="(\d+)" href="#\d+">[^<]+</a>) (.*)"##).unwrap();
 
     normalized
-        .split("\n---")
+        .split(ENTRY_SEPARATOR)
         .enumerate()
         .filter_map(|(i, block)| {
-            // The first block doesn't start with \n---, so don't strip leading \n
             let trimmed = if i == 0 {
                 block.trim_end_matches('\n')
             } else {
@@ -51,8 +128,9 @@ pub fn parse_scratchpad_entries(body_md: &str) -> Vec<ScratchpadEntry> {
                 return None;
             }
             let caps = anchor_re.captures(trimmed)?;
+            let timestamp_id = TimestampId::new(&caps[2]).ok()?;
             Some(ScratchpadEntry {
-                timestamp_id: caps[2].to_string(),
+                timestamp_id,
                 timestamp_html: caps[1].to_string(),
                 text: caps[3].to_string(),
             })
@@ -74,37 +152,28 @@ pub fn entries_to_body(entries: &[ScratchpadEntry]) -> String {
 }
 
 /// タイムスタンプIDとテキストからScratchpadEntryを生成
-pub fn create_scratchpad_entry(
-    timestamp_id: &str,
-    text: &str,
-) -> Result<ScratchpadEntry, ValidationError> {
-    validate_timestamp_id(timestamp_id)?;
-    let display = format!("{}:{}", &timestamp_id[0..2], &timestamp_id[2..4]);
-    let html = format!(
-        r##"<a id="{}" href="#{}">{}</a>"##,
-        timestamp_id, timestamp_id, display
-    );
-    Ok(ScratchpadEntry {
-        timestamp_id: timestamp_id.to_string(),
-        timestamp_html: html,
+pub fn create_scratchpad_entry(timestamp_id: &TimestampId, text: &str) -> ScratchpadEntry {
+    ScratchpadEntry {
+        timestamp_id: timestamp_id.clone(),
+        timestamp_html: timestamp_id.to_anchor_html(),
         text: text.to_string(),
-    })
+    }
 }
 
 /// 指定タイムスタンプIDのエントリのテキストを置換
 pub fn replace_entry_text(
     entries: &[ScratchpadEntry],
-    timestamp_id: &str,
+    timestamp_id: &TimestampId,
     new_text: &str,
 ) -> Result<Vec<ScratchpadEntry>, EntryError> {
-    if !entries.iter().any(|e| e.timestamp_id == timestamp_id) {
-        return Err(EntryError::NotFound(timestamp_id.to_string()));
+    if !entries.iter().any(|e| e.timestamp_id == *timestamp_id) {
+        return Err(EntryError::NotFound(timestamp_id.clone()));
     }
 
     Ok(entries
         .iter()
         .map(|e| {
-            if e.timestamp_id == timestamp_id {
+            if e.timestamp_id == *timestamp_id {
                 ScratchpadEntry {
                     timestamp_id: e.timestamp_id.clone(),
                     timestamp_html: e.timestamp_html.clone(),
@@ -120,15 +189,15 @@ pub fn replace_entry_text(
 /// 指定タイムスタンプIDのエントリを削除
 pub fn remove_entry(
     entries: &[ScratchpadEntry],
-    timestamp_id: &str,
+    timestamp_id: &TimestampId,
 ) -> Result<Vec<ScratchpadEntry>, EntryError> {
-    if !entries.iter().any(|e| e.timestamp_id == timestamp_id) {
-        return Err(EntryError::NotFound(timestamp_id.to_string()));
+    if !entries.iter().any(|e| e.timestamp_id == *timestamp_id) {
+        return Err(EntryError::NotFound(timestamp_id.clone()));
     }
 
     Ok(entries
         .iter()
-        .filter(|e| e.timestamp_id != timestamp_id)
+        .filter(|e| e.timestamp_id != *timestamp_id)
         .cloned()
         .collect())
 }
@@ -138,62 +207,13 @@ pub fn sort_entries_by_timestamp(entries: &mut [ScratchpadEntry]) {
     entries.sort_by(|a, b| b.timestamp_id.cmp(&a.timestamp_id));
 }
 
-/// 現在時刻からタイムスタンプIDを生成（HHMMSSffffff形式、12桁）
-pub fn generate_timestamp_id(dt: &DateTime<FixedOffset>) -> String {
-    dt.format("%H%M%S%6f").to_string()
-}
-
-/// タイムスタンプIDのフォーマットと値を検証
-pub fn validate_timestamp_id(timestamp_id: &str) -> Result<(), ValidationError> {
-    if timestamp_id.len() != 12 || !timestamp_id.chars().all(|c| c.is_ascii_digit()) {
-        return Err(ValidationError::InvalidFormat(format!(
-            "must be 12 digits, got \"{}\"",
-            timestamp_id
-        )));
-    }
-
-    let hours: u32 = timestamp_id[0..2].parse().unwrap();
-    let minutes: u32 = timestamp_id[2..4].parse().unwrap();
-    let seconds: u32 = timestamp_id[4..6].parse().unwrap();
-    let microseconds: u32 = timestamp_id[6..12].parse().unwrap();
-
-    if hours > 23 {
-        return Err(ValidationError::InvalidFormat(format!(
-            "hours out of range (0-23): {}",
-            hours
-        )));
-    }
-    if minutes > 59 {
-        return Err(ValidationError::InvalidFormat(format!(
-            "minutes out of range (0-59): {}",
-            minutes
-        )));
-    }
-    if seconds > 59 {
-        return Err(ValidationError::InvalidFormat(format!(
-            "seconds out of range (0-59): {}",
-            seconds
-        )));
-    }
-    if microseconds > 999999 {
-        return Err(ValidationError::InvalidFormat(format!(
-            "microseconds out of range (0-999999): {}",
-            microseconds
-        )));
-    }
-
-    Ok(())
-}
-
 /// タイムスタンプIDの重複チェック
 pub fn validate_no_duplicate_timestamp(
     entries: &[ScratchpadEntry],
-    timestamp_id: &str,
+    timestamp_id: &TimestampId,
 ) -> Result<(), ValidationError> {
-    if entries.iter().any(|e| e.timestamp_id == timestamp_id) {
-        return Err(ValidationError::DuplicateTimestamp(
-            timestamp_id.to_string(),
-        ));
+    if entries.iter().any(|e| e.timestamp_id == *timestamp_id) {
+        return Err(ValidationError::DuplicateTimestamp(timestamp_id.clone()));
     }
     Ok(())
 }
