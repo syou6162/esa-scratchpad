@@ -17,6 +17,7 @@ cargo install --git https://github.com/syou6162/esa-scratchpad.git
 | `ESA_SCRATCHPAD_ACCESS_TOKEN` | Yes | esa.io API アクセストークン（write権限が必要） |
 | `ESA_TEAM_NAME` | Yes | esa.io チーム名 |
 | `ESA_CATEGORY_PREFIX` | Yes | カテゴリプレフィックス（例: `日報/ラクガキ帳`） |
+| `ESA_POST_NAME` | No | 投稿名（デフォルト: `ラクガキ帳`） |
 
 ## 使い方
 
