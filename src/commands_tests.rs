@@ -169,6 +169,7 @@ fn resolve_post_name_falls_back_to_config() {
     env::set_var("ESA_TEAM_NAME", "test");
     env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "prefix");
+    env::remove_var("ESA_POST_NAME");
 
     let config = Config::load().unwrap();
     let result = resolve_post_name(&None, &config);
