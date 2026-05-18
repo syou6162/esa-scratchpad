@@ -1,6 +1,8 @@
+#[allow(dead_code)]
 mod client;
 mod config;
 mod entry;
+#[allow(dead_code)]
 mod error;
 mod validator;
 
