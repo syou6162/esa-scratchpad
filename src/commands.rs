@@ -162,7 +162,7 @@ fn print_validation_errors(
     }
 }
 
-pub fn cmd_write(
+pub fn cmd_add(
     text: &Option<String>,
     text_file: &Option<String>,
     timestamp: &Option<String>,
@@ -174,7 +174,7 @@ pub fn cmd_write(
     let config = match Config::load() {
         Ok(c) => c,
         Err(e) => {
-            print_error(json_mode, "write", &e.to_string());
+            print_error(json_mode, "add", &e.to_string());
             process::exit(EXIT_INPUT);
         }
     };
@@ -182,27 +182,27 @@ pub fn cmd_write(
     let input = match resolve_text_input(text, text_file) {
         Ok(t) => t,
         Err(e) => {
-            print_error(json_mode, "write", &e);
+            print_error(json_mode, "add", &e);
             process::exit(EXIT_INPUT);
         }
     };
 
     let trimmed = input.trim();
     if trimmed.is_empty() {
-        print_error(json_mode, "write", "テキストが空です");
+        print_error(json_mode, "add", "テキストが空です");
         process::exit(EXIT_INPUT);
     }
 
     let issues = validate_post_text(trimmed);
     if !issues.is_empty() {
-        print_validation_errors(json_mode, "write", &issues);
+        print_validation_errors(json_mode, "add", &issues);
         process::exit(EXIT_VALIDATION);
     }
 
     let date = match parse_date(date) {
         Ok(d) => d,
         Err(e) => {
-            print_error(json_mode, "write", &e);
+            print_error(json_mode, "add", &e);
             process::exit(EXIT_INPUT);
         }
     };
@@ -219,7 +219,7 @@ pub fn cmd_write(
             Err(e) => {
                 print_error(
                     json_mode,
-                    "write",
+                    "add",
                     &format!("タイムスタンプIDが不正です: {}", e),
                 );
                 process::exit(EXIT_INPUT);
@@ -231,7 +231,7 @@ pub fn cmd_write(
     let existing = match client.search_by_category(&category) {
         Ok(post) => post,
         Err(e) => {
-            print_error(json_mode, "write", &format!("API検索エラー: {}", e));
+            print_error(json_mode, "add", &format!("API検索エラー: {}", e));
             process::exit(EXIT_API);
         }
     };
@@ -241,7 +241,7 @@ pub fn cmd_write(
             let mut entries = match parse_scratchpad_entries(&post.body_md) {
                 Ok(e) => e,
                 Err(e) => {
-                    print_error(json_mode, "write", &format!("本文パースエラー: {}", e));
+                    print_error(json_mode, "add", &format!("本文パースエラー: {}", e));
                     process::exit(EXIT_API);
                 }
             };
@@ -258,7 +258,7 @@ pub fn cmd_write(
                 Ok(updated) => {
                     print_success(
                         json_mode,
-                        "write",
+                        "add",
                         "エントリを投稿しました",
                         &updated.url,
                         updated.number,
@@ -266,7 +266,7 @@ pub fn cmd_write(
                     );
                 }
                 Err(e) => {
-                    print_error(json_mode, "write", &format!("API更新エラー: {}", e));
+                    print_error(json_mode, "add", &format!("API更新エラー: {}", e));
                     process::exit(EXIT_API);
                 }
             }
@@ -280,7 +280,7 @@ pub fn cmd_write(
                 Ok(created) => {
                     print_success(
                         json_mode,
-                        "write",
+                        "add",
                         "エントリを投稿しました",
                         &created.url,
                         created.number,
@@ -288,7 +288,7 @@ pub fn cmd_write(
                     );
                 }
                 Err(e) => {
-                    print_error(json_mode, "write", &format!("API作成エラー: {}", e));
+                    print_error(json_mode, "add", &format!("API作成エラー: {}", e));
                     process::exit(EXIT_API);
                 }
             }
@@ -296,7 +296,7 @@ pub fn cmd_write(
     }
 }
 
-pub fn cmd_update(
+pub fn cmd_edit(
     text: &Option<String>,
     text_file: &Option<String>,
     timestamp: &str,
@@ -307,7 +307,7 @@ pub fn cmd_update(
     let config = match Config::load() {
         Ok(c) => c,
         Err(e) => {
-            print_error(json_mode, "update", &e.to_string());
+            print_error(json_mode, "edit", &e.to_string());
             process::exit(EXIT_INPUT);
         }
     };
@@ -315,20 +315,20 @@ pub fn cmd_update(
     let input = match resolve_text_input(text, text_file) {
         Ok(t) => t,
         Err(e) => {
-            print_error(json_mode, "update", &e);
+            print_error(json_mode, "edit", &e);
             process::exit(EXIT_INPUT);
         }
     };
 
     let trimmed = input.trim();
     if trimmed.is_empty() {
-        print_error(json_mode, "update", "テキストが空です");
+        print_error(json_mode, "edit", "テキストが空です");
         process::exit(EXIT_INPUT);
     }
 
     let issues = validate_post_text(trimmed);
     if !issues.is_empty() {
-        print_validation_errors(json_mode, "update", &issues);
+        print_validation_errors(json_mode, "edit", &issues);
         process::exit(EXIT_VALIDATION);
     }
 
@@ -337,7 +337,7 @@ pub fn cmd_update(
         Err(e) => {
             print_error(
                 json_mode,
-                "update",
+                "edit",
                 &format!("タイムスタンプIDが不正です: {}", e),
             );
             process::exit(EXIT_INPUT);
@@ -347,7 +347,7 @@ pub fn cmd_update(
     let date = match parse_date(date) {
         Ok(d) => d,
         Err(e) => {
-            print_error(json_mode, "update", &e);
+            print_error(json_mode, "edit", &e);
             process::exit(EXIT_INPUT);
         }
     };
@@ -361,13 +361,13 @@ pub fn cmd_update(
         Ok(None) => {
             print_error(
                 json_mode,
-                "update",
+                "edit",
                 &format!("指定日付の投稿が見つかりません: {}", category),
             );
             process::exit(EXIT_API);
         }
         Err(e) => {
-            print_error(json_mode, "update", &format!("API検索エラー: {}", e));
+            print_error(json_mode, "edit", &format!("API検索エラー: {}", e));
             process::exit(EXIT_API);
         }
     };
@@ -375,7 +375,7 @@ pub fn cmd_update(
     let entries = match parse_scratchpad_entries(&post.body_md) {
         Ok(e) => e,
         Err(e) => {
-            print_error(json_mode, "update", &format!("本文パースエラー: {}", e));
+            print_error(json_mode, "edit", &format!("本文パースエラー: {}", e));
             process::exit(EXIT_API);
         }
     };
@@ -385,7 +385,7 @@ pub fn cmd_update(
         Err(e) => {
             print_error(
                 json_mode,
-                "update",
+                "edit",
                 &format!("エントリが見つかりません: {}", e),
             );
             process::exit(EXIT_INPUT);
@@ -399,7 +399,7 @@ pub fn cmd_update(
         Ok(updated) => {
             print_success(
                 json_mode,
-                "update",
+                "edit",
                 "エントリを修正しました",
                 &updated.url,
                 updated.number,
@@ -407,7 +407,7 @@ pub fn cmd_update(
             );
         }
         Err(e) => {
-            print_error(json_mode, "update", &format!("API更新エラー: {}", e));
+            print_error(json_mode, "edit", &format!("API更新エラー: {}", e));
             process::exit(EXIT_API);
         }
     }
@@ -508,7 +508,7 @@ pub fn cmd_delete(
     }
 }
 
-pub fn cmd_title(
+pub fn cmd_rename(
     name: &str,
     date: &Option<String>,
     category_prefix: &Option<String>,
@@ -517,21 +517,21 @@ pub fn cmd_title(
     let config = match Config::load() {
         Ok(c) => c,
         Err(e) => {
-            print_error(json_mode, "title", &e.to_string());
+            print_error(json_mode, "rename", &e.to_string());
             process::exit(EXIT_INPUT);
         }
     };
 
     let issues = validate_scratchpad_title(name);
     if !issues.is_empty() {
-        print_validation_errors(json_mode, "title", &issues);
+        print_validation_errors(json_mode, "rename", &issues);
         process::exit(EXIT_VALIDATION);
     }
 
     let date = match parse_date(date) {
         Ok(d) => d,
         Err(e) => {
-            print_error(json_mode, "title", &e);
+            print_error(json_mode, "rename", &e);
             process::exit(EXIT_INPUT);
         }
     };
@@ -545,13 +545,13 @@ pub fn cmd_title(
         Ok(None) => {
             print_error(
                 json_mode,
-                "title",
+                "rename",
                 &format!("指定日付の投稿が見つかりません: {}", category),
             );
             process::exit(EXIT_API);
         }
         Err(e) => {
-            print_error(json_mode, "title", &format!("API検索エラー: {}", e));
+            print_error(json_mode, "rename", &format!("API検索エラー: {}", e));
             process::exit(EXIT_API);
         }
     };
@@ -560,7 +560,7 @@ pub fn cmd_title(
         Ok(updated) => {
             print_success(
                 json_mode,
-                "title",
+                "rename",
                 "タイトルを変更しました",
                 &updated.url,
                 updated.number,
@@ -568,7 +568,7 @@ pub fn cmd_title(
             );
         }
         Err(e) => {
-            print_error(json_mode, "title", &format!("API更新エラー: {}", e));
+            print_error(json_mode, "rename", &format!("API更新エラー: {}", e));
             process::exit(EXIT_API);
         }
     }

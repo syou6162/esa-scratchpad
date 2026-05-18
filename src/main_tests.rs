@@ -3,19 +3,19 @@ use super::*;
 // --- CLI argument parsing ---
 
 #[test]
-fn cli_write_with_text() {
-    let cli = Cli::try_parse_from(["esa-scratchpad", "write", "--text", "テスト"]).unwrap();
+fn cli_add_with_text() {
+    let cli = Cli::try_parse_from(["esa-scratchpad", "add", "--text", "テスト"]).unwrap();
     match cli.command {
-        Commands::Write { text, .. } => assert_eq!(text, Some("テスト".to_string())),
-        _ => panic!("expected Write command"),
+        Commands::Add { text, .. } => assert_eq!(text, Some("テスト".to_string())),
+        _ => panic!("expected Add command"),
     }
 }
 
 #[test]
-fn cli_write_with_all_options() {
+fn cli_add_with_all_options() {
     let cli = Cli::try_parse_from([
         "esa-scratchpad",
-        "write",
+        "add",
         "--text",
         "テスト",
         "--timestamp",
@@ -30,7 +30,7 @@ fn cli_write_with_all_options() {
     ])
     .unwrap();
     match cli.command {
-        Commands::Write {
+        Commands::Add {
             text,
             timestamp,
             date,
@@ -46,15 +46,15 @@ fn cli_write_with_all_options() {
             assert_eq!(post_name, Some("テスト帳".to_string()));
             assert!(json);
         }
-        _ => panic!("expected Write command"),
+        _ => panic!("expected Add command"),
     }
 }
 
 #[test]
-fn cli_write_short_flags() {
+fn cli_add_short_flags() {
     let cli = Cli::try_parse_from([
         "esa-scratchpad",
-        "write",
+        "add",
         "--text",
         "メモ",
         "-t",
@@ -68,7 +68,7 @@ fn cli_write_short_flags() {
     ])
     .unwrap();
     match cli.command {
-        Commands::Write {
+        Commands::Add {
             timestamp,
             date,
             category_prefix,
@@ -80,21 +80,21 @@ fn cli_write_short_flags() {
             assert_eq!(category_prefix, Some("prefix".to_string()));
             assert_eq!(post_name, Some("名前".to_string()));
         }
-        _ => panic!("expected Write command"),
+        _ => panic!("expected Add command"),
     }
 }
 
 #[test]
-fn cli_update_requires_timestamp() {
-    let result = Cli::try_parse_from(["esa-scratchpad", "update", "--text", "テスト"]);
+fn cli_edit_requires_timestamp() {
+    let result = Cli::try_parse_from(["esa-scratchpad", "edit", "--text", "テスト"]);
     assert!(result.is_err());
 }
 
 #[test]
-fn cli_update_with_required_args() {
+fn cli_edit_with_required_args() {
     let cli = Cli::try_parse_from([
         "esa-scratchpad",
-        "update",
+        "edit",
         "--timestamp",
         "153000123456",
         "--text",
@@ -102,13 +102,13 @@ fn cli_update_with_required_args() {
     ])
     .unwrap();
     match cli.command {
-        Commands::Update {
+        Commands::Edit {
             timestamp, text, ..
         } => {
             assert_eq!(timestamp, "153000123456");
             assert_eq!(text, Some("新しいテキスト".to_string()));
         }
-        _ => panic!("expected Update command"),
+        _ => panic!("expected Edit command"),
     }
 }
 
@@ -161,27 +161,27 @@ fn cli_delete_with_all_options() {
 }
 
 #[test]
-fn cli_title_requires_name() {
-    let result = Cli::try_parse_from(["esa-scratchpad", "title"]);
+fn cli_rename_requires_name() {
+    let result = Cli::try_parse_from(["esa-scratchpad", "rename"]);
     assert!(result.is_err());
 }
 
 #[test]
-fn cli_title_with_name() {
-    let cli = Cli::try_parse_from(["esa-scratchpad", "title", "--name", "新タイトル"]).unwrap();
+fn cli_rename_with_name() {
+    let cli = Cli::try_parse_from(["esa-scratchpad", "rename", "--name", "新タイトル"]).unwrap();
     match cli.command {
-        Commands::Title { name, .. } => {
+        Commands::Rename { name, .. } => {
             assert_eq!(name, "新タイトル");
         }
-        _ => panic!("expected Title command"),
+        _ => panic!("expected Rename command"),
     }
 }
 
 #[test]
-fn cli_title_with_all_options() {
+fn cli_rename_with_all_options() {
     let cli = Cli::try_parse_from([
         "esa-scratchpad",
-        "title",
+        "rename",
         "--name",
         "新タイトル",
         "-d",
@@ -192,7 +192,7 @@ fn cli_title_with_all_options() {
     ])
     .unwrap();
     match cli.command {
-        Commands::Title {
+        Commands::Rename {
             name,
             date,
             category_prefix,
@@ -203,6 +203,6 @@ fn cli_title_with_all_options() {
             assert_eq!(category_prefix, Some("prefix".to_string()));
             assert!(json);
         }
-        _ => panic!("expected Title command"),
+        _ => panic!("expected Rename command"),
     }
 }

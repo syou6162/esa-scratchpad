@@ -11,7 +11,7 @@ mod main_tests;
 
 use clap::{Parser, Subcommand};
 
-use commands::{cmd_delete, cmd_title, cmd_update, cmd_write};
+use commands::{cmd_add, cmd_delete, cmd_edit, cmd_rename};
 
 #[derive(Parser)]
 #[command(name = "esa-scratchpad", about = "esa.io ラクガキ帳 CLI ツール")]
@@ -23,7 +23,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// エントリを投稿
-    Write {
+    Add {
         /// 投稿テキスト
         #[arg(long)]
         text: Option<String>,
@@ -53,7 +53,7 @@ enum Commands {
         json: bool,
     },
     /// エントリを修正
-    Update {
+    Edit {
         /// 投稿テキスト
         #[arg(long)]
         text: Option<String>,
@@ -97,7 +97,7 @@ enum Commands {
         json: bool,
     },
     /// タイトルを変更
-    Title {
+    Rename {
         /// 新しいタイトル
         #[arg(long)]
         name: String,
@@ -120,7 +120,7 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Write {
+        Commands::Add {
             text,
             text_file,
             timestamp,
@@ -128,7 +128,7 @@ fn main() {
             category_prefix,
             post_name,
             json,
-        } => cmd_write(
+        } => cmd_add(
             &text,
             &text_file,
             &timestamp,
@@ -137,25 +137,25 @@ fn main() {
             &post_name,
             json,
         ),
-        Commands::Update {
+        Commands::Edit {
             text,
             text_file,
             timestamp,
             date,
             category_prefix,
             json,
-        } => cmd_update(&text, &text_file, &timestamp, &date, &category_prefix, json),
+        } => cmd_edit(&text, &text_file, &timestamp, &date, &category_prefix, json),
         Commands::Delete {
             timestamp,
             date,
             category_prefix,
             json,
         } => cmd_delete(&timestamp, &date, &category_prefix, json),
-        Commands::Title {
+        Commands::Rename {
             name,
             date,
             category_prefix,
             json,
-        } => cmd_title(&name, &date, &category_prefix, json),
+        } => cmd_rename(&name, &date, &category_prefix, json),
     }
 }
