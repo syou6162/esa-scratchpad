@@ -311,7 +311,6 @@ fn cli_title_with_all_options() {
 
 #[test]
 fn resolve_category_prefix_cli_overrides_config() {
-    use serial_test::serial;
     use std::env;
 
     env::set_var("ESA_TEAM_NAME", "test");
