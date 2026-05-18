@@ -44,10 +44,6 @@ enum Commands {
         #[arg(short = 'c', long)]
         category_prefix: Option<String>,
 
-        /// 投稿名(新規作成時)
-        #[arg(short = 'n', long)]
-        post_name: Option<String>,
-
         /// JSON形式で出力
         #[arg(long, default_value_t = false)]
         json: bool,
@@ -126,17 +122,8 @@ fn main() {
             timestamp,
             date,
             category_prefix,
-            post_name,
             json,
-        } => cmd_add(
-            &text,
-            &text_file,
-            &timestamp,
-            &date,
-            &category_prefix,
-            &post_name,
-            json,
-        ),
+        } => cmd_add(&text, &text_file, &timestamp, &date, &category_prefix, json),
         Commands::Edit {
             text,
             text_file,

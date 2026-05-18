@@ -24,8 +24,6 @@ fn cli_add_with_all_options() {
         "2026-05-18",
         "--category-prefix",
         "日報/テスト",
-        "--post-name",
-        "テスト帳",
         "--json",
     ])
     .unwrap();
@@ -35,7 +33,6 @@ fn cli_add_with_all_options() {
             timestamp,
             date,
             category_prefix,
-            post_name,
             json,
             ..
         } => {
@@ -43,7 +40,6 @@ fn cli_add_with_all_options() {
             assert_eq!(timestamp, Some("153000123456".to_string()));
             assert_eq!(date, Some("2026-05-18".to_string()));
             assert_eq!(category_prefix, Some("日報/テスト".to_string()));
-            assert_eq!(post_name, Some("テスト帳".to_string()));
             assert!(json);
         }
         _ => panic!("expected Add command"),
@@ -63,8 +59,6 @@ fn cli_add_short_flags() {
         "2026-01-01",
         "-c",
         "prefix",
-        "-n",
-        "名前",
     ])
     .unwrap();
     match cli.command {
@@ -72,13 +66,11 @@ fn cli_add_short_flags() {
             timestamp,
             date,
             category_prefix,
-            post_name,
             ..
         } => {
             assert_eq!(timestamp, Some("120000000000".to_string()));
             assert_eq!(date, Some("2026-01-01".to_string()));
             assert_eq!(category_prefix, Some("prefix".to_string()));
-            assert_eq!(post_name, Some("名前".to_string()));
         }
         _ => panic!("expected Add command"),
     }

@@ -168,7 +168,6 @@ pub fn cmd_add(
     timestamp: &Option<String>,
     date: &Option<String>,
     category_prefix: &Option<String>,
-    post_name_opt: &Option<String>,
     json_mode: bool,
 ) {
     let config = match Config::load() {
@@ -209,7 +208,7 @@ pub fn cmd_add(
 
     let prefix = resolve_category_prefix(category_prefix, &config);
     let category = get_scratchpad_category(&prefix, &date);
-    let post_name = resolve_post_name(post_name_opt, &config);
+    let post_name = resolve_post_name(&None, &config);
 
     let client = EsaClient::new(config.team_name.clone(), config.access_token.clone());
 
