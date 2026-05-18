@@ -10,6 +10,7 @@ const RATE_LIMIT_WARNING_THRESHOLD: u64 = 20;
 
 #[derive(Debug, Deserialize)]
 pub struct SearchResponse {
+    #[allow(dead_code)]
     pub total_count: u32,
     pub posts: Vec<Post>,
 }
@@ -17,12 +18,14 @@ pub struct SearchResponse {
 #[derive(Debug, Deserialize)]
 pub struct Post {
     pub number: u64,
+    #[allow(dead_code)]
     pub name: String,
     pub body_md: String,
     #[serde(default)]
     pub tags: Vec<String>,
     pub url: String,
     #[serde(default)]
+    #[allow(dead_code)]
     pub category: Option<String>,
 }
 

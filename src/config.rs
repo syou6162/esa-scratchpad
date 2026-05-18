@@ -31,6 +31,7 @@ pub enum ConfigError {
     #[error("Required environment variable {name} is not set. {hint}")]
     MissingEnvVar { name: &'static str, hint: String },
 
+    #[allow(dead_code)]
     #[error("Configuration file error: {0}")]
     FileError(String),
 

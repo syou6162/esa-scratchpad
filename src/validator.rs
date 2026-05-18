@@ -27,6 +27,7 @@ pub enum ValidationCode {
 /// バリデーション違反
 pub struct ValidationIssue {
     /// 違反種別
+    #[allow(dead_code)]
     pub code: ValidationCode,
     /// ユーザー向けエラーメッセージ
     pub message: String,
