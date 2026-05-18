@@ -4,14 +4,14 @@ use std::env;
 
 fn clear_env_vars() {
     env::remove_var("ESA_TEAM_NAME");
-    env::remove_var("ESA_ACCESS_TOKEN");
+    env::remove_var("ESA_SCRATCHPAD_ACCESS_TOKEN");
     env::remove_var("ESA_CATEGORY_PREFIX");
     env::remove_var("ESA_POST_NAME");
 }
 
 fn set_all_required_env_vars() {
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "test-token-123");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "test-token-123");
     env::set_var("ESA_CATEGORY_PREFIX", "日報/ラクガキ帳");
 }
 
@@ -51,7 +51,7 @@ fn load_all_env_vars_including_optional() {
 #[serial]
 fn load_missing_team_name() {
     clear_env_vars();
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "prefix");
 
     let err = Config::load().unwrap_err();
@@ -71,7 +71,7 @@ fn load_missing_access_token() {
 
     let err = Config::load().unwrap_err();
     let msg = err.to_string();
-    assert!(msg.contains("ESA_ACCESS_TOKEN"), "got: {}", msg);
+    assert!(msg.contains("ESA_SCRATCHPAD_ACCESS_TOKEN"), "got: {}", msg);
     assert!(msg.contains("esa.io/user/tokens"), "got: {}", msg);
 
     clear_env_vars();
@@ -82,7 +82,7 @@ fn load_missing_access_token() {
 fn load_missing_category_prefix() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
 
     let err = Config::load().unwrap_err();
     let msg = err.to_string();
@@ -112,7 +112,7 @@ fn default_post_name_applied() {
 fn category_prefix_valid() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "Claude Code/秘書の極秘メモ帳");
 
     let config = Config::load().unwrap();
@@ -126,7 +126,7 @@ fn category_prefix_valid() {
 fn category_prefix_leading_slash_rejected() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "/日報/ラクガキ帳");
 
     let err = Config::load().unwrap_err();
@@ -141,7 +141,7 @@ fn category_prefix_leading_slash_rejected() {
 fn category_prefix_trailing_slash_rejected() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "日報/ラクガキ帳/");
 
     let err = Config::load().unwrap_err();
@@ -156,7 +156,7 @@ fn category_prefix_trailing_slash_rejected() {
 fn category_prefix_double_dot_rejected() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "日報/../secret");
 
     let err = Config::load().unwrap_err();
@@ -171,7 +171,7 @@ fn category_prefix_double_dot_rejected() {
 fn category_prefix_double_slash_rejected() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "日報//ラクガキ帳");
 
     let err = Config::load().unwrap_err();
@@ -186,7 +186,7 @@ fn category_prefix_double_slash_rejected() {
 fn category_prefix_empty_rejected() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "  ");
 
     let err = Config::load().unwrap_err();
@@ -222,11 +222,11 @@ fn debug_display_masks_token() {
 #[test]
 fn config_error_missing_env_var_message() {
     let err = ConfigError::MissingEnvVar {
-        name: "ESA_ACCESS_TOKEN",
-        hint: "Hint: export ESA_ACCESS_TOKEN=\"your-token-here\"".to_string(),
+        name: "ESA_SCRATCHPAD_ACCESS_TOKEN",
+        hint: "Hint: export ESA_SCRATCHPAD_ACCESS_TOKEN=\"your-token-here\"".to_string(),
     };
     let msg = err.to_string();
-    assert!(msg.contains("ESA_ACCESS_TOKEN"), "got: {}", msg);
+    assert!(msg.contains("ESA_SCRATCHPAD_ACCESS_TOKEN"), "got: {}", msg);
     assert!(msg.contains("Hint:"), "got: {}", msg);
 }
 

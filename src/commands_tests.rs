@@ -111,7 +111,7 @@ fn resolve_category_prefix_cli_overrides_config() {
     use std::env;
 
     env::set_var("ESA_TEAM_NAME", "test");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "from-env");
 
     let config = Config::load().unwrap();
@@ -119,7 +119,7 @@ fn resolve_category_prefix_cli_overrides_config() {
     assert_eq!(result, "from-cli");
 
     env::remove_var("ESA_TEAM_NAME");
-    env::remove_var("ESA_ACCESS_TOKEN");
+    env::remove_var("ESA_SCRATCHPAD_ACCESS_TOKEN");
     env::remove_var("ESA_CATEGORY_PREFIX");
 }
 
@@ -129,7 +129,7 @@ fn resolve_category_prefix_falls_back_to_config() {
     use std::env;
 
     env::set_var("ESA_TEAM_NAME", "test");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "from-env");
 
     let config = Config::load().unwrap();
@@ -137,7 +137,7 @@ fn resolve_category_prefix_falls_back_to_config() {
     assert_eq!(result, "from-env");
 
     env::remove_var("ESA_TEAM_NAME");
-    env::remove_var("ESA_ACCESS_TOKEN");
+    env::remove_var("ESA_SCRATCHPAD_ACCESS_TOKEN");
     env::remove_var("ESA_CATEGORY_PREFIX");
 }
 
@@ -149,7 +149,7 @@ fn resolve_post_name_cli_overrides_config() {
     use std::env;
 
     env::set_var("ESA_TEAM_NAME", "test");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "prefix");
 
     let config = Config::load().unwrap();
@@ -157,7 +157,7 @@ fn resolve_post_name_cli_overrides_config() {
     assert_eq!(result, "カスタム名");
 
     env::remove_var("ESA_TEAM_NAME");
-    env::remove_var("ESA_ACCESS_TOKEN");
+    env::remove_var("ESA_SCRATCHPAD_ACCESS_TOKEN");
     env::remove_var("ESA_CATEGORY_PREFIX");
 }
 
@@ -167,7 +167,7 @@ fn resolve_post_name_falls_back_to_config() {
     use std::env;
 
     env::set_var("ESA_TEAM_NAME", "test");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_SCRATCHPAD_ACCESS_TOKEN", "token");
     env::set_var("ESA_CATEGORY_PREFIX", "prefix");
 
     let config = Config::load().unwrap();
@@ -175,7 +175,7 @@ fn resolve_post_name_falls_back_to_config() {
     assert_eq!(result, "ラクガキ帳");
 
     env::remove_var("ESA_TEAM_NAME");
-    env::remove_var("ESA_ACCESS_TOKEN");
+    env::remove_var("ESA_SCRATCHPAD_ACCESS_TOKEN");
     env::remove_var("ESA_CATEGORY_PREFIX");
 }
 
