@@ -2,7 +2,6 @@
 #[path = "commands_tests.rs"]
 mod commands_tests;
 
-use std::io::{self, IsTerminal, Read};
 use std::process;
 
 use chrono::{FixedOffset, NaiveDate, Utc};
@@ -48,18 +47,7 @@ pub fn resolve_text_input(
             .map_err(|e| format!("ファイル読み込みに失敗しました: {}: {}", path, e));
     }
 
-    if io::stdin().is_terminal() {
-        return Err(
-            "テキストが指定されていません。--text, --text-file, またはstdinパイプを使用してください"
-                .to_string(),
-        );
-    }
-
-    let mut buf = String::new();
-    io::stdin()
-        .read_to_string(&mut buf)
-        .map_err(|e| format!("stdinの読み込みに失敗しました: {}", e))?;
-    Ok(buf)
+    Err("テキストが指定されていません。--text または --text-file を使用してください".to_string())
 }
 
 pub fn parse_date(date_str: &Option<String>) -> Result<NaiveDate, String> {

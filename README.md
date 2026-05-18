@@ -30,9 +30,6 @@ esa-scratchpad add --text "今日のメモ"
 # ファイルから読み込み
 esa-scratchpad add --text-file memo.txt
 
-# stdin から入力（パイプ）
-echo "パイプ入力" | esa-scratchpad add
-
 # オプション指定
 esa-scratchpad add --text "メモ" \
   --date 2026-05-18 \
@@ -69,13 +66,7 @@ esa-scratchpad rename --name "新しいタイトル"
 
 ### テキスト入力
 
-テキスト入力は以下の優先順位で解決されます:
-
-1. `--text` フラグ
-2. `--text-file` フラグ（ファイルパス指定）
-3. stdin（パイプ/リダイレクト）
-
-`--text` と `--text-file` の同時指定はエラーになります。
+`--text` または `--text-file` のどちらかでテキストを指定します。同時指定はエラーになります。
 
 ### 出力
 
