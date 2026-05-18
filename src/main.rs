@@ -5,6 +5,7 @@ mod config;
 mod entry;
 #[allow(dead_code)]
 mod error;
+#[allow(dead_code)]
 mod validator;
 
 use clap::{Parser, Subcommand};
