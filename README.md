@@ -2,56 +2,48 @@
 
 [esa.io](https://esa.io) のラクガキ帳（日報スクラッチパッド）を操作する CLI ツール。
 
-日付ごとのスクラッチパッド投稿に対して、エントリの追加・更新・削除やタイトル変更を行えます。
+日付ごとのスクラッチパッド投稿に対して、エントリの追加・編集・削除やタイトル変更を行えます。
 
-## セットアップ
-
-### 必要なもの
-
-- Rust 1.70+
-- esa.io の API アクセストークン
-
-### ビルド
+## インストール
 
 ```bash
-cargo build --release
+cargo install --git https://github.com/syou6162/esa-scratchpad.git
 ```
 
 ### 環境変数
 
 | 変数名 | 必須 | 説明 |
 |--------|------|------|
-| `ESA_ACCESS_TOKEN` | Yes | esa.io API アクセストークン |
+| `ESA_SCRATCHPAD_ACCESS_TOKEN` | Yes | esa.io API アクセストークン（write権限が必要） |
 | `ESA_TEAM_NAME` | Yes | esa.io チーム名 |
-| `ESA_CATEGORY_PREFIX` | No | カテゴリプレフィックス（デフォルト: `日報/ラクガキ帳`） |
+| `ESA_CATEGORY_PREFIX` | Yes | カテゴリプレフィックス（例: `日報/ラクガキ帳`） |
 
 ## 使い方
 
-### write — エントリを投稿
+### add — エントリを投稿
 
 ```bash
 # テキストを直接指定
-esa-scratchpad write --text "今日のメモ"
+esa-scratchpad add --text "今日のメモ"
 
 # ファイルから読み込み
-esa-scratchpad write --text-file memo.txt
+esa-scratchpad add --text-file memo.txt
 
 # stdin から入力（パイプ）
-echo "パイプ入力" | esa-scratchpad write
+echo "パイプ入力" | esa-scratchpad add
 
 # オプション指定
-esa-scratchpad write --text "メモ" \
+esa-scratchpad add --text "メモ" \
   --date 2026-05-18 \
   --timestamp 153000000000 \
   --category-prefix "日報/テスト" \
-  --post-name "テスト帳" \
   --json
 ```
 
-### update — エントリを修正
+### edit — エントリを修正
 
 ```bash
-esa-scratchpad update --timestamp 153000123456 --text "修正テキスト"
+esa-scratchpad edit --timestamp 153000123456 --text "修正テキスト"
 ```
 
 ### delete — エントリを削除
@@ -60,10 +52,10 @@ esa-scratchpad update --timestamp 153000123456 --text "修正テキスト"
 esa-scratchpad delete --timestamp 153000123456
 ```
 
-### title — タイトルを変更
+### rename — タイトルを変更
 
 ```bash
-esa-scratchpad title --name "新しいタイトル"
+esa-scratchpad rename --name "新しいタイトル"
 ```
 
 ### 共通オプション
@@ -72,7 +64,6 @@ esa-scratchpad title --name "新しいタイトル"
 |--------|------|------|-----------|
 | `--date` | `-d` | 対象日付（YYYY-MM-DD） | 今日（JST） |
 | `--category-prefix` | `-c` | カテゴリプレフィックス | 環境変数 `ESA_CATEGORY_PREFIX` |
-| `--post-name` | `-n` | 投稿名（新規作成時、write のみ） | `ラクガキ帳` |
 | `--json` | | JSON 形式で出力 | false |
 
 ### テキスト入力
@@ -101,7 +92,7 @@ JSON モード (`--json`):
   "post_url": "https://yasuhisa.esa.io/posts/12345",
   "post_number": 12345,
   "timestamp_id": "153000123456",
-  "action": "write"
+  "action": "add"
 }
 ```
 
