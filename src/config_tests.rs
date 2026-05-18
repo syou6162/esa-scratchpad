@@ -1,4 +1,5 @@
 use super::*;
+use chrono::{FixedOffset, NaiveDate, Utc};
 use serial_test::serial;
 use std::env;
 
@@ -16,10 +17,7 @@ fn set_all_required_env_vars() {
 }
 
 fn no_cli_args() -> CliArgs {
-    CliArgs {
-        category_prefix: None,
-        post_name: None,
-    }
+    CliArgs { date: None }
 }
 
 // --- 全環境変数が設定されている場合 ---
@@ -86,7 +84,7 @@ fn load_missing_access_token() {
 
 #[test]
 #[serial]
-fn load_missing_category_prefix_no_cli() {
+fn load_missing_category_prefix() {
     clear_env_vars();
     env::set_var("ESA_TEAM_NAME", "myteam");
     env::set_var("ESA_ACCESS_TOKEN", "token");
@@ -94,58 +92,6 @@ fn load_missing_category_prefix_no_cli() {
     let err = Config::load(&no_cli_args()).unwrap_err();
     let msg = err.to_string();
     assert!(msg.contains("ESA_CATEGORY_PREFIX"), "got: {}", msg);
-
-    clear_env_vars();
-}
-
-// --- CLIフラグが環境変数より優先される ---
-
-#[test]
-#[serial]
-fn cli_category_prefix_overrides_env() {
-    clear_env_vars();
-    set_all_required_env_vars();
-
-    let cli_args = CliArgs {
-        category_prefix: Some("CLI/カテゴリ".to_string()),
-        post_name: None,
-    };
-    let config = Config::load(&cli_args).unwrap();
-    assert_eq!(config.category_prefix, "CLI/カテゴリ");
-
-    clear_env_vars();
-}
-
-#[test]
-#[serial]
-fn cli_post_name_overrides_env() {
-    clear_env_vars();
-    set_all_required_env_vars();
-    env::set_var("ESA_POST_NAME", "環境変数の名前");
-
-    let cli_args = CliArgs {
-        category_prefix: None,
-        post_name: Some("CLIの名前".to_string()),
-    };
-    let config = Config::load(&cli_args).unwrap();
-    assert_eq!(config.post_name, "CLIの名前");
-
-    clear_env_vars();
-}
-
-#[test]
-#[serial]
-fn cli_category_prefix_bypasses_missing_env() {
-    clear_env_vars();
-    env::set_var("ESA_TEAM_NAME", "myteam");
-    env::set_var("ESA_ACCESS_TOKEN", "token");
-
-    let cli_args = CliArgs {
-        category_prefix: Some("CLI/prefix".to_string()),
-        post_name: None,
-    };
-    let config = Config::load(&cli_args).unwrap();
-    assert_eq!(config.category_prefix, "CLI/prefix");
 
     clear_env_vars();
 }
@@ -160,6 +106,145 @@ fn default_post_name_applied() {
 
     let config = Config::load(&no_cli_args()).unwrap();
     assert_eq!(config.post_name, "ラクガキ帳");
+
+    clear_env_vars();
+}
+
+// --- 日付: CLIフラグで指定 ---
+
+#[test]
+#[serial]
+fn date_from_cli_flag() {
+    clear_env_vars();
+    set_all_required_env_vars();
+
+    let cli_args = CliArgs {
+        date: Some("2026/05/18".to_string()),
+    };
+    let config = Config::load(&cli_args).unwrap();
+    assert_eq!(config.date, NaiveDate::from_ymd_opt(2026, 5, 18).unwrap());
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn date_defaults_to_today_jst() {
+    clear_env_vars();
+    set_all_required_env_vars();
+
+    let config = Config::load(&no_cli_args()).unwrap();
+    let jst = FixedOffset::east_opt(9 * 3600).unwrap();
+    let today_jst = Utc::now().with_timezone(&jst).date_naive();
+    assert_eq!(config.date, today_jst);
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn date_invalid_format_error() {
+    clear_env_vars();
+    set_all_required_env_vars();
+
+    let cli_args = CliArgs {
+        date: Some("2026-05-18".to_string()),
+    };
+    let err = Config::load(&cli_args).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("日付の形式が不正です"), "got: {}", msg);
+    assert!(msg.contains("YYYY/MM/DD"), "got: {}", msg);
+
+    clear_env_vars();
+}
+
+// --- category_prefix バリデーション ---
+
+#[test]
+#[serial]
+fn category_prefix_valid() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "Claude Code/秘書の極秘メモ帳");
+
+    let config = Config::load(&no_cli_args()).unwrap();
+    assert_eq!(config.category_prefix, "Claude Code/秘書の極秘メモ帳");
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn category_prefix_leading_slash_rejected() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "/日報/ラクガキ帳");
+
+    let err = Config::load(&no_cli_args()).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("先頭/末尾に/は使えません"), "got: {}", msg);
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn category_prefix_trailing_slash_rejected() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "日報/ラクガキ帳/");
+
+    let err = Config::load(&no_cli_args()).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("先頭/末尾に/は使えません"), "got: {}", msg);
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn category_prefix_double_dot_rejected() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "日報/../secret");
+
+    let err = Config::load(&no_cli_args()).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("..は使えません"), "got: {}", msg);
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn category_prefix_double_slash_rejected() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "日報//ラクガキ帳");
+
+    let err = Config::load(&no_cli_args()).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("連続する//は使えません"), "got: {}", msg);
+
+    clear_env_vars();
+}
+
+#[test]
+#[serial]
+fn category_prefix_empty_rejected() {
+    clear_env_vars();
+    env::set_var("ESA_TEAM_NAME", "myteam");
+    env::set_var("ESA_ACCESS_TOKEN", "token");
+    env::set_var("ESA_CATEGORY_PREFIX", "  ");
+
+    let err = Config::load(&no_cli_args()).unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("空にできません"), "got: {}", msg);
 
     clear_env_vars();
 }
@@ -202,4 +287,10 @@ fn config_error_missing_env_var_message() {
 fn config_error_file_error_message() {
     let err = ConfigError::FileError("file not found".to_string());
     assert!(err.to_string().contains("file not found"));
+}
+
+#[test]
+fn config_error_invalid_value_message() {
+    let err = ConfigError::InvalidValue("category_prefixは空にできません".to_string());
+    assert!(err.to_string().contains("空にできません"));
 }
