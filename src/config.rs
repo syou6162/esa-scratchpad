@@ -31,6 +31,7 @@ pub enum ConfigError {
     #[error("Required environment variable {name} is not set. {hint}")]
     MissingEnvVar { name: &'static str, hint: String },
 
+    #[allow(dead_code)]
     #[error("Configuration file error: {0}")]
     FileError(String),
 
@@ -47,9 +48,9 @@ impl Config {
     pub fn load() -> Result<Config, ConfigError> {
         let team_name = require_env("ESA_TEAM_NAME", "export ESA_TEAM_NAME=\"your-team-name\"")?;
         let access_token = require_env(
-            "ESA_ACCESS_TOKEN",
+            "ESA_SCRATCHPAD_ACCESS_TOKEN",
             &format!(
-                "export ESA_ACCESS_TOKEN=\"your-token-here\"\n      Get your token at https://{}.esa.io/user/tokens",
+                "export ESA_SCRATCHPAD_ACCESS_TOKEN=\"your-token-here\"\n      Get your token at https://{}.esa.io/user/tokens",
                 team_name
             ),
         )?;
