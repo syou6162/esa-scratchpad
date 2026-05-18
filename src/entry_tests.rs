@@ -88,7 +88,7 @@ fn entries_to_body_empty() {
 
 #[test]
 fn create_entry_generates_correct_html() {
-    let entry = create_scratchpad_entry("153000123456", "テストメモ");
+    let entry = create_scratchpad_entry("153000123456", "テストメモ").unwrap();
     assert_eq!(entry.timestamp_id, "153000123456");
     assert_eq!(
         entry.timestamp_html,
@@ -99,11 +99,18 @@ fn create_entry_generates_correct_html() {
 
 #[test]
 fn create_entry_midnight() {
-    let entry = create_scratchpad_entry("000000000000", "深夜メモ");
+    let entry = create_scratchpad_entry("000000000000", "深夜メモ").unwrap();
     assert_eq!(
         entry.timestamp_html,
         "<a id=\"000000000000\" href=\"#000000000000\">00:00</a>"
     );
+}
+
+#[test]
+fn create_entry_invalid_timestamp_id() {
+    assert!(create_scratchpad_entry("invalid", "テスト").is_err());
+    assert!(create_scratchpad_entry("250000000000", "テスト").is_err());
+    assert!(create_scratchpad_entry("", "テスト").is_err());
 }
 
 // --- replace_entry_text ---
@@ -111,8 +118,8 @@ fn create_entry_midnight() {
 #[test]
 fn replace_entry_text_success() {
     let entries = vec![
-        create_scratchpad_entry("170000000000", "元テキスト"),
-        create_scratchpad_entry("130000000000", "昼のメモ"),
+        create_scratchpad_entry("170000000000", "元テキスト").unwrap(),
+        create_scratchpad_entry("130000000000", "昼のメモ").unwrap(),
     ];
     let result = replace_entry_text(&entries, "170000000000", "新テキスト").unwrap();
     assert_eq!(result[0].text, "新テキスト");
@@ -121,7 +128,7 @@ fn replace_entry_text_success() {
 
 #[test]
 fn replace_entry_text_not_found() {
-    let entries = vec![create_scratchpad_entry("170000000000", "テスト")];
+    let entries = vec![create_scratchpad_entry("170000000000", "テスト").unwrap()];
     let err = replace_entry_text(&entries, "999999999999", "新テキスト").unwrap_err();
     assert!(matches!(err, EntryError::NotFound(_)));
 }
@@ -131,8 +138,8 @@ fn replace_entry_text_not_found() {
 #[test]
 fn remove_entry_success() {
     let entries = vec![
-        create_scratchpad_entry("170000000000", "夕方"),
-        create_scratchpad_entry("130000000000", "昼"),
+        create_scratchpad_entry("170000000000", "夕方").unwrap(),
+        create_scratchpad_entry("130000000000", "昼").unwrap(),
     ];
     let result = remove_entry(&entries, "170000000000").unwrap();
     assert_eq!(result.len(), 1);
@@ -141,7 +148,7 @@ fn remove_entry_success() {
 
 #[test]
 fn remove_entry_not_found() {
-    let entries = vec![create_scratchpad_entry("170000000000", "テスト")];
+    let entries = vec![create_scratchpad_entry("170000000000", "テスト").unwrap()];
     let err = remove_entry(&entries, "999999999999").unwrap_err();
     assert!(matches!(err, EntryError::NotFound(_)));
 }
@@ -151,9 +158,9 @@ fn remove_entry_not_found() {
 #[test]
 fn sort_entries_descending() {
     let mut entries = vec![
-        create_scratchpad_entry("090000000000", "朝"),
-        create_scratchpad_entry("170000000000", "夕方"),
-        create_scratchpad_entry("130000000000", "昼"),
+        create_scratchpad_entry("090000000000", "朝").unwrap(),
+        create_scratchpad_entry("170000000000", "夕方").unwrap(),
+        create_scratchpad_entry("130000000000", "昼").unwrap(),
     ];
     sort_entries_by_timestamp(&mut entries);
     assert_eq!(entries[0].timestamp_id, "170000000000");
@@ -216,13 +223,13 @@ fn validate_timestamp_id_seconds_out_of_range() {
 
 #[test]
 fn validate_no_duplicate_no_conflict() {
-    let entries = vec![create_scratchpad_entry("170000000000", "テスト")];
+    let entries = vec![create_scratchpad_entry("170000000000", "テスト").unwrap()];
     assert!(validate_no_duplicate_timestamp(&entries, "130000000000").is_ok());
 }
 
 #[test]
 fn validate_no_duplicate_conflict() {
-    let entries = vec![create_scratchpad_entry("170000000000", "テスト")];
+    let entries = vec![create_scratchpad_entry("170000000000", "テスト").unwrap()];
     let err = validate_no_duplicate_timestamp(&entries, "170000000000").unwrap_err();
     assert!(matches!(err, ValidationError::DuplicateTimestamp(_)));
 }

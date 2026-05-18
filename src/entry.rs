@@ -74,17 +74,21 @@ pub fn entries_to_body(entries: &[ScratchpadEntry]) -> String {
 }
 
 /// タイムスタンプIDとテキストからScratchpadEntryを生成
-pub fn create_scratchpad_entry(timestamp_id: &str, text: &str) -> ScratchpadEntry {
+pub fn create_scratchpad_entry(
+    timestamp_id: &str,
+    text: &str,
+) -> Result<ScratchpadEntry, ValidationError> {
+    validate_timestamp_id(timestamp_id)?;
     let display = format!("{}:{}", &timestamp_id[0..2], &timestamp_id[2..4]);
     let html = format!(
         r##"<a id="{}" href="#{}">{}</a>"##,
         timestamp_id, timestamp_id, display
     );
-    ScratchpadEntry {
+    Ok(ScratchpadEntry {
         timestamp_id: timestamp_id.to_string(),
         timestamp_html: html,
         text: text.to_string(),
-    }
+    })
 }
 
 /// 指定タイムスタンプIDのエントリのテキストを置換
