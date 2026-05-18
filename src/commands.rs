@@ -17,9 +17,7 @@ use crate::entry::{
 };
 use crate::validator::{validate_post_text, validate_scratchpad_title};
 
-const EXIT_VALIDATION: i32 = 1;
-const EXIT_API: i32 = 2;
-const EXIT_INPUT: i32 = 3;
+const EXIT_ERROR: i32 = 1;
 
 pub fn jst_offset() -> FixedOffset {
     FixedOffset::east_opt(9 * 3600).unwrap()
@@ -174,7 +172,7 @@ pub fn cmd_add(
         Ok(c) => c,
         Err(e) => {
             print_error(json_mode, "add", &e.to_string());
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -182,27 +180,27 @@ pub fn cmd_add(
         Ok(t) => t,
         Err(e) => {
             print_error(json_mode, "add", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
     let trimmed = input.trim();
     if trimmed.is_empty() {
         print_error(json_mode, "add", "テキストが空です");
-        process::exit(EXIT_INPUT);
+        process::exit(EXIT_ERROR);
     }
 
     let issues = validate_post_text(trimmed);
     if !issues.is_empty() {
         print_validation_errors(json_mode, "add", &issues);
-        process::exit(EXIT_VALIDATION);
+        process::exit(EXIT_ERROR);
     }
 
     let date = match parse_date(date) {
         Ok(d) => d,
         Err(e) => {
             print_error(json_mode, "add", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -221,7 +219,7 @@ pub fn cmd_add(
                     "add",
                     &format!("タイムスタンプIDが不正です: {}", e),
                 );
-                process::exit(EXIT_INPUT);
+                process::exit(EXIT_ERROR);
             }
         },
         None => TimestampId::from_datetime(&now_jst()),
@@ -231,7 +229,7 @@ pub fn cmd_add(
         Ok(post) => post,
         Err(e) => {
             print_error(json_mode, "add", &format!("API検索エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -241,7 +239,7 @@ pub fn cmd_add(
                 Ok(e) => e,
                 Err(e) => {
                     print_error(json_mode, "add", &format!("本文パースエラー: {}", e));
-                    process::exit(EXIT_API);
+                    process::exit(EXIT_ERROR);
                 }
             };
 
@@ -266,7 +264,7 @@ pub fn cmd_add(
                 }
                 Err(e) => {
                     print_error(json_mode, "add", &format!("API更新エラー: {}", e));
-                    process::exit(EXIT_API);
+                    process::exit(EXIT_ERROR);
                 }
             }
         }
@@ -288,7 +286,7 @@ pub fn cmd_add(
                 }
                 Err(e) => {
                     print_error(json_mode, "add", &format!("API作成エラー: {}", e));
-                    process::exit(EXIT_API);
+                    process::exit(EXIT_ERROR);
                 }
             }
         }
@@ -307,7 +305,7 @@ pub fn cmd_edit(
         Ok(c) => c,
         Err(e) => {
             print_error(json_mode, "edit", &e.to_string());
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -315,20 +313,20 @@ pub fn cmd_edit(
         Ok(t) => t,
         Err(e) => {
             print_error(json_mode, "edit", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
     let trimmed = input.trim();
     if trimmed.is_empty() {
         print_error(json_mode, "edit", "テキストが空です");
-        process::exit(EXIT_INPUT);
+        process::exit(EXIT_ERROR);
     }
 
     let issues = validate_post_text(trimmed);
     if !issues.is_empty() {
         print_validation_errors(json_mode, "edit", &issues);
-        process::exit(EXIT_VALIDATION);
+        process::exit(EXIT_ERROR);
     }
 
     let ts = match TimestampId::new(timestamp) {
@@ -339,7 +337,7 @@ pub fn cmd_edit(
                 "edit",
                 &format!("タイムスタンプIDが不正です: {}", e),
             );
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -347,7 +345,7 @@ pub fn cmd_edit(
         Ok(d) => d,
         Err(e) => {
             print_error(json_mode, "edit", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -363,11 +361,11 @@ pub fn cmd_edit(
                 "edit",
                 &format!("指定日付の投稿が見つかりません: {}", category),
             );
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
         Err(e) => {
             print_error(json_mode, "edit", &format!("API検索エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -375,7 +373,7 @@ pub fn cmd_edit(
         Ok(e) => e,
         Err(e) => {
             print_error(json_mode, "edit", &format!("本文パースエラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -387,7 +385,7 @@ pub fn cmd_edit(
                 "edit",
                 &format!("エントリが見つかりません: {}", e),
             );
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -407,7 +405,7 @@ pub fn cmd_edit(
         }
         Err(e) => {
             print_error(json_mode, "edit", &format!("API更新エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     }
 }
@@ -422,7 +420,7 @@ pub fn cmd_delete(
         Ok(c) => c,
         Err(e) => {
             print_error(json_mode, "delete", &e.to_string());
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -434,7 +432,7 @@ pub fn cmd_delete(
                 "delete",
                 &format!("タイムスタンプIDが不正です: {}", e),
             );
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -442,7 +440,7 @@ pub fn cmd_delete(
         Ok(d) => d,
         Err(e) => {
             print_error(json_mode, "delete", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -458,11 +456,11 @@ pub fn cmd_delete(
                 "delete",
                 &format!("指定日付の投稿が見つかりません: {}", category),
             );
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
         Err(e) => {
             print_error(json_mode, "delete", &format!("API検索エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -470,7 +468,7 @@ pub fn cmd_delete(
         Ok(e) => e,
         Err(e) => {
             print_error(json_mode, "delete", &format!("本文パースエラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -482,7 +480,7 @@ pub fn cmd_delete(
                 "delete",
                 &format!("エントリが見つかりません: {}", e),
             );
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -502,7 +500,7 @@ pub fn cmd_delete(
         }
         Err(e) => {
             print_error(json_mode, "delete", &format!("API更新エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     }
 }
@@ -517,21 +515,21 @@ pub fn cmd_rename(
         Ok(c) => c,
         Err(e) => {
             print_error(json_mode, "rename", &e.to_string());
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
     let issues = validate_scratchpad_title(name);
     if !issues.is_empty() {
         print_validation_errors(json_mode, "rename", &issues);
-        process::exit(EXIT_VALIDATION);
+        process::exit(EXIT_ERROR);
     }
 
     let date = match parse_date(date) {
         Ok(d) => d,
         Err(e) => {
             print_error(json_mode, "rename", &e);
-            process::exit(EXIT_INPUT);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -547,11 +545,11 @@ pub fn cmd_rename(
                 "rename",
                 &format!("指定日付の投稿が見つかりません: {}", category),
             );
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
         Err(e) => {
             print_error(json_mode, "rename", &format!("API検索エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     };
 
@@ -568,7 +566,7 @@ pub fn cmd_rename(
         }
         Err(e) => {
             print_error(json_mode, "rename", &format!("API更新エラー: {}", e));
-            process::exit(EXIT_API);
+            process::exit(EXIT_ERROR);
         }
     }
 }
