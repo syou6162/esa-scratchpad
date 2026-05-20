@@ -1,6 +1,6 @@
 ---
 name: writing-scratchpad
-description: esa-scratchpad CLIを使ってesa.ioのラクガキ帳に投稿・編集・削除・タイトル変更を行う手順
+description: esa.ioのラクガキ帳に投稿・編集・削除・タイトル変更するときに使用。esa-scratchpad CLIの使い方とフォーマット制約・品質ガイドラインを定義する。
 ---
 
 ## 前提
